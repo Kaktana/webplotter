@@ -4,6 +4,7 @@ import os
 from werkzeug.utils import secure_filename
 import time
 import traceback
+
 app = Flask(__name__)
 
 DATA_DIR = "data"
@@ -14,20 +15,21 @@ def getHome():
     return '<img src="data.png" />'
 
 
-@app.route("/addPoint", methods=["POST"])
-def addPoint():
-    req = request.get_json()
-    timestamp = req.get("timestamp", time.time())
-    with open(os.path.join(DATA_DIR, secure_filename(req["key"])), "a") as f:
-        f.write(str(timestamp) + " " + str(req["value"]) + "\n")
-    bounds = getBoundaries()
-    print("current bounds", bounds)
-    print("timestamp", timestamp)
-    if timestamp < bounds[0]:
-        setBoundaries(timestamp, bounds[1])
-        bounds = (timestamp, bounds[1])
-    if timestamp > bounds[1]:
-        setBoundaries(bounds[0], timestamp)
+@app.route("/addPoints", methods=["POST"])
+def addPoints():
+    points = request.get_json()
+    for req in points:
+        timestamp = req.get("timestamp", time.time())
+        with open(os.path.join(DATA_DIR, secure_filename(req["key"])), "a") as f:
+            f.write(str(timestamp) + " " + str(req["value"]) + "\n")
+        bounds = getBoundaries()
+        print("current bounds", bounds)
+        print("timestamp", timestamp)
+        if timestamp < bounds[0]:
+            setBoundaries(timestamp, bounds[1])
+            bounds = (timestamp, bounds[1])
+        if timestamp > bounds[1]:
+            setBoundaries(bounds[0], timestamp)
     return ""
 
 
