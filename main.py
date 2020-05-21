@@ -4,6 +4,7 @@ import os
 from werkzeug.utils import secure_filename
 import time
 import traceback
+import urllib
 
 app = Flask(__name__)
 
@@ -12,7 +13,57 @@ DATA_DIR = "data"
 
 @app.route("/")
 def getHome():
-    return '<img src="data.png" />'
+    paramstr = urllib.parse.urlencode(request.args)
+    css = """
+    <style>
+        a {
+              text-decoration: none;
+        }
+        a:link{
+          color:blue;
+        }
+        a:visited{
+          color:blue;
+        }
+        a:hover{
+          color:orange;
+        }
+        a:focus{
+          color:green;
+        }
+        a:active{
+          color:red;
+        }
+    </style>"""
+    imgStr = '<img src="data.png?{}" />'.format(paramstr)
+    buttonStr = ""
+    durations = [
+        (0, "ALL"),
+        (1.577e7, "6M"),
+        (0.788e7, "3M"),
+        (2.628e6, "1M"),
+        (604800, "1w"),
+        (259200, "3d"),
+        (86400, "1d"),
+        (86400 / 2, "12h"),
+        (3600 * 3, "3h"),
+        (3600, "1h"),
+        (1800, "30m"),
+        (900, "15m"),
+        (300, "5m"),
+    ]
+    for duration in durations:
+        current_duration = request.args.get("duration", 0)
+        print(duration[0], current_duration)
+        print(int(duration[0]) == int(current_duration))
+        if int(duration[0]) == int(current_duration):
+            buttonStr += "<a> {} </a>".format(duration[1])
+        else:
+            buttonStr += '<a href="/?duration={}"> {} </a>'.format(
+                int(duration[0]), duration[1]
+            )
+
+    return css + buttonStr + imgStr
 
 
 @app.route("/addPoints", methods=["POST"])
@@ -52,7 +103,11 @@ def getBoundaries():
 @app.route("/data.png")
 def getData():
     bounds = getBoundaries()
-
+    duration = request.args.get("duration")
+    print(duration)
+    if duration and int(duration) != 0:
+        bounds = (time.time() - int(duration), bounds[1])
+    print(bounds)
     paths = {}
     for path in os.listdir(DATA_DIR):
         if os.path.isfile(os.path.join(DATA_DIR, path)) and path != "bounds":
