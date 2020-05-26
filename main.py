@@ -144,18 +144,18 @@ def getData():
             )
         )
         script += "\n"
+        newLines = []
         for path in paths[prefix]:
             with open(os.path.join(DATA_DIR, path), "r") as reader:
-                newLines = []
                 lastTS = 0
                 for line in reader.readlines():
                     currentTS = float(line.split(" ")[0])
-                    if bounds[0] < currentTS < bounds[1] and currentTS - lastTS > interval:
+                    if bounds[0] < currentTS and currentTS - lastTS > interval:
                         newLines.append(line)
                         lastTS = currentTS
-                script += "".join(newLines)
-                script += "e\n"
+                newLines.append("e\n")
 
+        script += "".join(newLines)
         # if c == 0:
         c += 1
         # plot \"second.dat\" using 1:2 with lines lw 2 lt 3 title 'hosta'
