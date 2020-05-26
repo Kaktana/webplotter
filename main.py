@@ -71,7 +71,7 @@ def addPoints():
     for req in points:
         timestamp = req.get("timestamp", time.time())
         with open(os.path.join(DATA_DIR, secure_filename(req["key"])), "a") as f:
-            f.write(str(timestamp) + " " + str(req["value"]) + "\n")
+            f.write(str(int(timestamp)) + " " + str(req["value"]) + "\n")
         bounds = getBoundaries()
         print("current bounds", bounds)
         print("timestamp", timestamp)
@@ -130,9 +130,8 @@ def getData():
     script += "set size 1, {}\n".format(1.0 / count)
     script += "set xrange [{}:{}]\n".format(bounds[0], bounds[1])
     c = 0
-    duration = bounds[1] - bounds[0]
-    interval = (bounds[1] - bounds[0]) / IMG_WIDTH
-    print(interval)
+    interval = float((bounds[1] - bounds[0]) / IMG_WIDTH)
+    bounds = (float(bounds[0]), float(bounds[1]))
     for prefix in paths.keys():
         # script += "set ylabel \"{}\" \n".format(path)
         script += "set origin 0.0, {}\n".format(c / count)
@@ -147,12 +146,14 @@ def getData():
         script += "\n"
         for path in paths[prefix]:
             with open(os.path.join(DATA_DIR, path), "r") as reader:
+                newLines = []
                 lastTS = 0
                 for line in reader.readlines():
                     currentTS = float(line.split(" ")[0])
                     if bounds[0] < currentTS < bounds[1] and currentTS - lastTS > interval:
-                        script += line
+                        newLines.append(line)
                         lastTS = currentTS
+                script += "".join(newLines)
                 script += "e\n"
 
         # if c == 0:
