@@ -1,4 +1,4 @@
-FROM pypy:slim
+FROM python:3.6
 
 COPY Pipfile Pipfile
 COPY Pipfile.lock Pipfile.lock
