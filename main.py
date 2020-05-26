@@ -150,7 +150,7 @@ def getData():
                 lastTS = 0
                 for line in reader.readlines():
                     currentTS = float(line.split(" ")[0])
-                    if currentTS - lastTS > interval:
+                    if bounds[0] < currentTS < bounds[1] and currentTS - lastTS > interval:
                         script += line
                         lastTS = currentTS
                 script += "e\n"
