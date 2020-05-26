@@ -8,7 +8,23 @@ import urllib
 
 app = Flask(__name__)
 
+IMG_WIDTH = 1900
 DATA_DIR = "data"
+DURATIONS = [
+    (0, "ALL"),
+    (1.577e7, "6M"),
+    (0.788e7, "3M"),
+    (2.628e6, "1M"),
+    (604800, "1w"),
+    (259200, "3d"),
+    (86400, "1d"),
+    (86400 / 2, "12h"),
+    (3600 * 3, "3h"),
+    (3600, "1h"),
+    (1800, "30m"),
+    (900, "15m"),
+    (300, "5m"),
+]
 
 
 @app.route("/")
@@ -37,25 +53,8 @@ def getHome():
     </style>"""
     imgStr = '<img src="data.png?{}" />'.format(paramstr)
     buttonStr = ""
-    durations = [
-        (0, "ALL"),
-        (1.577e7, "6M"),
-        (0.788e7, "3M"),
-        (2.628e6, "1M"),
-        (604800, "1w"),
-        (259200, "3d"),
-        (86400, "1d"),
-        (86400 / 2, "12h"),
-        (3600 * 3, "3h"),
-        (3600, "1h"),
-        (1800, "30m"),
-        (900, "15m"),
-        (300, "5m"),
-    ]
-    for duration in durations:
+    for duration in DURATIONS:
         current_duration = request.args.get("duration", 0)
-        print(duration[0], current_duration)
-        print(int(duration[0]) == int(current_duration))
         if int(duration[0]) == int(current_duration):
             buttonStr += "<a> {} </a>".format(duration[1])
         else:
@@ -121,7 +120,7 @@ def getData():
     if count == 0:
         return ""
     script = 'set datafile separator " "\n'
-    script += "set terminal png size 1900,{}\n".format(count * 200)
+    script += "set terminal png size {},{}\n".format(IMG_WIDTH, count * 200)
     script += "set xdata time\n"
     script += 'set timefmt "%s"\n'
     script += 'set format x "%d %b %H:%M"\n'
@@ -131,25 +130,37 @@ def getData():
     script += "set size 1, {}\n".format(1.0 / count)
     script += "set xrange [{}:{}]\n".format(bounds[0], bounds[1])
     c = 0
+    duration = bounds[1] - bounds[0]
+    interval = (bounds[1] - bounds[0]) / IMG_WIDTH
+    print(interval)
     for prefix in paths.keys():
         # script += "set ylabel \"{}\" \n".format(path)
         script += "set origin 0.0, {}\n".format(c / count)
         script += "plot {} \n".format(
             ", ".join(
                 [
-                    '"'
-                    + os.path.join(DATA_DIR, path)
-                    + "\" using 1:2 with lines title '{}'".format(path)
+                    "\"-\" using 1:2 with lines title '{}'".format(path)
                     for path in paths[prefix]
                 ]
             )
         )
+        script += "\n"
+        for path in paths[prefix]:
+            with open(os.path.join(DATA_DIR, path), "r") as reader:
+                lastTS = 0
+                for line in reader.readlines():
+                    currentTS = float(line.split(" ")[0])
+                    if currentTS - lastTS > interval:
+                        script += line
+                        lastTS = currentTS
+                script += "e\n"
+
         # if c == 0:
         c += 1
         # plot \"second.dat\" using 1:2 with lines lw 2 lt 3 title 'hosta'
 
     p = subprocess.Popen(["gnuplot"], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-    print(script)
+    #print(script)
     p.stdin.write(script.encode("utf-8"))
     p.stdin.close()
     return p.stdout.read()
