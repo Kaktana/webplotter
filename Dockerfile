@@ -1,3 +1,10 @@
+FROM rust:latest AS rust-builder
+
+COPY data-filterer data-filterer
+WORKDIR data-filterer
+
+RUN cargo build --release
+
 FROM python:3.6
 
 COPY Pipfile Pipfile
@@ -7,6 +14,7 @@ RUN apt-get update -y && apt-get install gnuplot -y --no-install-recommends && p
 RUN pipenv install --deploy --system && pip uninstall -y pipenv
 COPY . /app
 RUN mkdir /app/data
+COPY --from=rust-builder data-filterer /app/data/data-filterer
 
 
 RUN useradd appuser

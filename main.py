@@ -138,30 +138,23 @@ def getData():
         script += "plot {} \n".format(
             ", ".join(
                 [
-                    "\"-\" using 1:2 with lines title '{}'".format(path)
+                    "\"<./data-filterer/target/release/data-filterer {} {} {} {}\" using 1:2 with lines title '{}'".format(
+                        os.path.join(DATA_DIR, path),
+                        interval,
+                        bounds[0],
+                        bounds[1],
+                        path,
+                    )
                     for path in paths[prefix]
                 ]
             )
         )
         script += "\n"
-        newLines = []
-        for path in paths[prefix]:
-            with open(os.path.join(DATA_DIR, path), "r") as reader:
-                lastTS = 0
-                for line in reader.readlines():
-                    currentTS = float(line.split(" ")[0])
-                    if bounds[0] < currentTS and currentTS - lastTS > interval:
-                        newLines.append(line)
-                        lastTS = currentTS
-                newLines.append("e\n")
-
-        script += "".join(newLines)
-        # if c == 0:
         c += 1
         # plot \"second.dat\" using 1:2 with lines lw 2 lt 3 title 'hosta'
 
     p = subprocess.Popen(["gnuplot"], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-    #print(script)
+    print(script)
     p.stdin.write(script.encode("utf-8"))
     p.stdin.close()
     return p.stdout.read()
